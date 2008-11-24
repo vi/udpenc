@@ -210,7 +210,7 @@ void read_key(const char* fname, BLOWFISH_CTX* ctx){
     }
 
     if(fread(&buf, KEYSIZE, 1, f)!=1){
-	fprintf(stderr, "Error reading key, it must be at lease %d bytes\n", KEYSIZE);
+	fprintf(stderr, "Error reading key, it must be at least %d bytes\n", KEYSIZE);
 	exit(1);
     }
 
