@@ -24,7 +24,7 @@ static const char rcsid[] = "$Id:$";
 #include "blowfish.h"
 
 #define BSIZE 4096
-#define KEYSIZE 64 /* in bytes */
+#define KEYSIZE 64 /* in bytes, only for file keys */
 
 #ifdef MORE_SECURE
 
@@ -80,11 +80,11 @@ int main(int argc, char* argv[]){
 
     if(argc<=7){
 	fprintf(stderr,"\
-Usage: udpenc key_file {c|l|-}[oonect|isten] plaintext_address plaintext_port {c|l|-}[oonect|isten] cipher_address cipher_port [verbosity]\n\
+Usage: udpenc {key_file|-|=key_string} {c|l|-}[oonect|isten] plaintext_address plaintext_port {c|l|-}[oonect|isten] cipher_address cipher_port [verbosity]\n\
 \tExample: \"udpenc secret.key l 127.0.0.1 22 l 192.168.0.1 22\" on one side \n\
 \tand \"udpenc secret.key l 127.0.0.1 22 c 192.168.0.1 22\" on the other.\n\
 \t\"-\" means stdin/stdout for everything (e.g. \n\
-\t\"socat exec:'udpenc secret.key - - - l 0.0.0.0 2222' exec:'pppd noauth nodetach notty debug'\")\n");
+\t\"socat exec:'udpenc =gj23sJendsj34lksdj - - - l 0.0.0.0 2222' exec:'pppd noauth nodetach notty debug'\")\n");
 	exit(1);
     }
     if(argc>8){
@@ -267,6 +267,19 @@ void read_key(const char* fname, BLOWFISH_CTX* ctx){
 
     if(fname[0]=='-' && fname[1]==0){
 	f=stdin;
+    }else
+    if(fname[0]=='='){
+	const char *key=fname+1;
+	int len=strlen(key);
+
+	if(len<8){
+	    fprintf(stderr, "key is too short\n");
+	    exit(1);
+	}
+	srand(*(unsigned int*)key);
+	Blowfish_Init (ctx, (unsigned char*)key, len);
+
+	return;
     }else{
 	f=fopen(fname, "r");
 	if(!f){
