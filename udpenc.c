@@ -6,10 +6,6 @@
  *
  */
 
-/* in MORE_SECURE mode size of all packets will be increased by 8 bytes */
-/* without MORE_SECURE mode long equal plaintext packets produce equal cipher packets */
-
-//#define MORE_SECURE
 
 static const char rcsid[] = "$Id:$";
 
@@ -26,19 +22,9 @@ static const char rcsid[] = "$Id:$";
 #define BSIZE 4096
 #define KEYSIZE 64 /* in bytes, only for file keys */
 
-#ifdef MORE_SECURE
-
-    #define TRAILMAGIC "X\xf7\x73\x77X\x2aX\x07\xa4\x5c\x78X"
-    #define TRAILLEN 12
-    #define THRESLEN 20
-
-#else
-
-    #define TRAILMAGIC "XXXXXXXX"
-    #define TRAILLEN 8
-    #define THRESLEN 65536
-
-#endif
+#define TRAILMAGIC "XXXXXXXX"
+#define TRAILLEN 8
+#define THRESLEN 65536
 
 #define p_key_name            argv[1]
 #define p_plaintext_mode      argv[2]
