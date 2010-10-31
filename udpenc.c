@@ -6,10 +6,10 @@
  *
  */
 
-/* without PRESERVE_LENGTH mode size of all packets will be increased by 8 bytes */
-/* with PRESERVE_LENGTH mode long equal plaintext packets produce equal cipher packets */
+/* in MORE_SECURE mode size of all packets will be increased by 8 bytes */
+/* without MORE_SECURE mode long equal plaintext packets produce equal cipher packets */
 
-//#define PRESERVE_LENGTH
+//#define MORE_SECURE
 
 static const char rcsid[] = "$Id:$";
 
@@ -26,19 +26,19 @@ static const char rcsid[] = "$Id:$";
 #define BSIZE 4096
 #define KEYSIZE 64 /* in bytes, only for file keys */
 
-#define P_TRAILMAGIC "X\xf7\x73\x77X\x2aX\x07\xa4\x5c\x78X"
-#define P_TRAILLEN 12
-#define P_THRESLEN 20
+#ifdef MORE_SECURE
 
-#define N_TRAILMAGIC "XXXXXXXX"
-#define N_TRAILLEN 8
-#define N_THRESLEN 65536
+    #define TRAILMAGIC "X\xf7\x73\x77X\x2aX\x07\xa4\x5c\x78X"
+    #define TRAILLEN 12
+    #define THRESLEN 20
 
-char* TRAILMAGIC = N_TRAILMAGIC;
-int   TRAILLEN   = N_TRAILLEN;
-int   THRESLEN   = N_THRESLEN;
-int   preserve_length=0;
+#else
 
+    #define TRAILMAGIC "XXXXXXXX"
+    #define TRAILLEN 8
+    #define THRESLEN 65536
+
+#endif
 
 #define p_key_name            argv[1]
 #define p_plaintext_mode      argv[2]
@@ -48,7 +48,6 @@ int   preserve_length=0;
 #define p_cipher_address      argv[6]
 #define p_cipher_port         argv[7]
 #define p_debug_level         argv[8]
-#define p_preserve_length     argv[9]
 
 void read_key(const char* fname, BLOWFISH_CTX* ctx);
 int get_server_udp_socket(const char* address, int port);
@@ -81,7 +80,7 @@ int main(int argc, char* argv[]){
 
     if(argc<=7){
 	fprintf(stderr,"\
-Usage: udpenc {key_file|-|=key_string} {c|l|-}[oonect|isten] plaintext_address plaintext_port {c|l|-}[oonect|isten] cipher_address cipher_port [verbosity] [p[reserve_length]]\n\
+Usage: udpenc {key_file|-|=key_string} {c|l|-}[oonect|isten] plaintext_address plaintext_port {c|l|-}[oonect|isten] cipher_address cipher_port [verbosity]\n\
 \tExample: \"udpenc secret.key c 127.0.0.1 22 l 192.168.0.1 22\" on one side \n\
 \tand \"udpenc secret.key l 127.0.0.1 22 c 192.168.0.1 22\" on the other.\n\
 \t\"-\" means stdin/stdout for everything (e.g. \n\
@@ -90,12 +89,6 @@ Usage: udpenc {key_file|-|=key_string} {c|l|-}[oonect|isten] plaintext_address p
     }
     if(argc>8){
 	debuglevel=atoi(p_debug_level);
-    }
-    if(argc>9 && p_preserve_length[0]=='p'){
-	TRAILMAGIC = P_TRAILMAGIC;
-	TRAILLEN   = P_TRAILLEN;
-	THRESLEN   = P_THRESLEN;
-	preserve_length=1;
     }
     if(
 	    (*p_plaintext_mode!='c'&&*p_plaintext_mode!='l'&&*p_plaintext_mode!='-') ||
@@ -308,7 +301,7 @@ void read_key(const char* fname, BLOWFISH_CTX* ctx){
 
 void encrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
     int i;
-    if(*len<THRESLEN || !preserve_length){
+    if(*len<THRESLEN){
 	for(i=0; i<TRAILLEN; ++i){
 	    if(TRAILMAGIC[i]=='X'){
 		buf[*len+i]=(unsigned char)rand();
@@ -323,9 +316,6 @@ void encrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
 	Blowfish_Encrypt(ctx, (unsigned long*)(buf+i), (unsigned long*)(buf+i+4));
 	//fprintf(stderr,"%08X%08X\n",  *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
     }
-    
-    Blowfish_Encrypt(ctx, (unsigned long*)(buf+*len-8), (unsigned long*)(buf+*len-4));
-    
     for(i=(*len-8)&~7; i >=0; i-=4){
 	//fprintf(stderr,"encrypt %d %08X%08X -> ",i, *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
 	Blowfish_Encrypt(ctx, (unsigned long*)(buf+i), (unsigned long*)(buf+i+4));
@@ -335,7 +325,7 @@ void encrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
 void decrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
     int i;
     if(*len < TRAILLEN){
-	// fail, this packet is malformed    
+	// fail, this packet as malformed    
 	*len=-1;
 	return;
     }
@@ -344,17 +334,11 @@ void decrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
 	Blowfish_Decrypt(ctx, (unsigned long*)(buf+i), (unsigned long*)(buf+i+4));
 	//fprintf(stderr,"%08X%08X\n",  *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
     }
-
-    Blowfish_Decrypt(ctx, (unsigned long*)(buf+*len-8), (unsigned long*)(buf+*len-4));
-
     for(i=(*len-8)&~7; i >=0; i-=4){
 	//fprintf(stderr,"decrypt %d %08X%08X -> ",i, *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
 	Blowfish_Decrypt(ctx, (unsigned long*)(buf+i), (unsigned long*)(buf+i+4));
 	//fprintf(stderr,"%08X%08X\n",  *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
     }
-    if(!preserve_length){
-	*len-=TRAILLEN;
-    }else
     if(*len >= TRAILLEN && *len<THRESLEN+TRAILLEN){
 	*len-=TRAILLEN;     
 	for(i=0; i<TRAILLEN; ++i){

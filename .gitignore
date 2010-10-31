@@ -2,8 +2,6 @@ udpenc
 .*.swp
 *~
 *.o
-
 /udpenc-1.1
-
 *.deb
 *.tgz
