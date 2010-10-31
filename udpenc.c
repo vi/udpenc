@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
     if(argc<=7){
 	fprintf(stderr,"\
 Usage: udpenc {key_file|-|=key_string} {c|l|-}[oonect|isten] plaintext_address plaintext_port {c|l|-}[oonect|isten] cipher_address cipher_port [verbosity] [p[reserve_length]]\n\
-\tExample: \"udpenc secret.key l 127.0.0.1 22 l 192.168.0.1 22\" on one side \n\
+\tExample: \"udpenc secret.key c 127.0.0.1 22 l 192.168.0.1 22\" on one side \n\
 \tand \"udpenc secret.key l 127.0.0.1 22 c 192.168.0.1 22\" on the other.\n\
 \t\"-\" means stdin/stdout for everything (e.g. \n\
 \t\"socat exec:'udpenc =gj23sJendsj34lksdj - - - l 0.0.0.0 2222' exec:'pppd noauth nodetach notty debug'\")\n");
