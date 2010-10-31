@@ -1,0 +1,21 @@
+Description¶
+
+UDP relay with blowfish encryption.
+
+UDP client <-> udpenc <-> public network <-> updenc <-> UDP server.
+
+May also use stdin/stdout instead of UDP sockets.
+
+Can be used to implement PPP over UDP in more secure way.
+
+Tested with pppd on Linux on one end and slirp.exe on Windows on the other end. If it don't work, please send a bug report to email vi0oss at server gmail.com. (if it works, please send too).
+Example¶
+
+Host A:
+socat exec:"udpenc key_file - - - l 0.0.0.0 8888 2" exec:"slirp -P"
+
+Host B:
+pppd noauth nodetach 10.0.2.15:10.0.2.44 pty 'udpenc key_file - - - c 208.77.188.166 8888' unit 1
+route add default ppp1
+
+If this don't work, please report. 
