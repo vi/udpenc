@@ -100,7 +100,7 @@ Usage: udpenc {key_file|-|=key_string} {c|l|-}[oonect|isten] plaintext_address p
     if(
 	    (*p_plaintext_mode!='c'&&*p_plaintext_mode!='l'&&*p_plaintext_mode!='-') ||
 	    (*p_cipher_mode!='c'&&*p_cipher_mode!='l'&&*p_cipher_mode!='-') ) {
-	fprintf(stderr, "Only 'l' or 'c' or '-' should be as 2'nd and 5'th argument\n");
+	fprintf(stderr, "Only 'l' or 'c' or '-' should be 2'nd and 5'th argument\n");
 	exit(1);
     }
 
