@@ -4,3 +4,6 @@ udpenc
 *.o
 
 /udpenc-1.1
+
+*.deb
+*.tgz
