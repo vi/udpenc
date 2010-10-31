@@ -22,9 +22,7 @@ static const char rcsid[] = "$Id:$";
 #define BSIZE 4096
 #define KEYSIZE 64 /* in bytes, only for file keys */
 
-#define TRAILMAGIC "XXXXXXXX"
 #define TRAILLEN 8
-#define THRESLEN 65536
 
 #define p_key_name            argv[1]
 #define p_plaintext_mode      argv[2]
@@ -287,16 +285,10 @@ void read_key(const char* fname, BLOWFISH_CTX* ctx){
 
 void encrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
     int i;
-    if(*len<THRESLEN){
-	for(i=0; i<TRAILLEN; ++i){
-	    if(TRAILMAGIC[i]=='X'){
-		buf[*len+i]=(unsigned char)rand();
-	    }else{
-		buf[*len+i]=TRAILMAGIC[i];
-	    }
-	}
-	*len+=TRAILLEN;
+    for(i=0; i<TRAILLEN; ++i){
+	buf[*len+i]=(unsigned char)rand();
     }
+    *len+=TRAILLEN;
     for(i=0; i < *len-8; i+=4){
 	//fprintf(stderr,"encrypt %d %08X%08X -> ",i, *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
 	Blowfish_Encrypt(ctx, (unsigned long*)(buf+i), (unsigned long*)(buf+i+4));
@@ -325,13 +317,5 @@ void decrypt(BLOWFISH_CTX* ctx, char* buf, int *len){
 	Blowfish_Decrypt(ctx, (unsigned long*)(buf+i), (unsigned long*)(buf+i+4));
 	//fprintf(stderr,"%08X%08X\n",  *(unsigned long*)(buf+i), *(unsigned long*)(buf+i+4));
     }
-    if(*len >= TRAILLEN && *len<THRESLEN+TRAILLEN){
-	*len-=TRAILLEN;     
-	for(i=0; i<TRAILLEN; ++i){
-	    if((buf[*len+i]!=TRAILMAGIC[i]) && TRAILMAGIC[i]!='X'){
-		*len+=TRAILLEN;
-		break;
-	    }
-	}
-    }
+    *len-=TRAILLEN;     
 }
